@@ -343,3 +343,24 @@ client.on('messageCreate', async (message) => {
 
   // ... [phần code các lệnh khác giữ nguyên như trước]
 });
+let isShutdown = false;
+
+client.on('messageCreate', async (message) => {
+  if (isShutdown && message.content !== '?startup') return;
+
+  // ... các lệnh khác giữ nguyên
+
+  if (cmd === 'shutdown') {
+    if (!isOwner(message.author)) return message.reply("Chỉ owner mới được tắt bot!");
+    isShutdown = true;
+    return message.reply("Bot đã vào trạng thái tạm dừng. Gõ `?startup` để bật lại.");
+  }
+
+  if (cmd === 'startup') {
+    if (!isOwner(message.author)) return;
+    isShutdown = false;
+    return message.reply("Bot đã hoạt động lại!");
+  }
+
+  // ... các lệnh khác
+});
