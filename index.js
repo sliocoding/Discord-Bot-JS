@@ -31,13 +31,17 @@ let admins = new Set();
 // Leaderboard điểm minigame (chỉ đơn giản, muốn lưu DB thì nâng cấp)
 let leaderboard = {};
 
+// Warns: { guildId: { userId: count } }
+let warns = {};
+
 // ======= Helper: Kiểm tra quyền owner =======
 function isOwner(user) {
-  return user.id === OWNER_ID;
+  return user.id === OWNER_ID || user === OWNER_ID;
 }
 
 // ======= Helper: Kiểm tra quyền admin (owner luôn là admin) =======
 function isAdmin(member) {
+  if (!member) return false;
   if (isOwner(member.user)) return true;
   if (admins.has(member.id)) return true;
   if (ADMIN_ROLE_ID && member.roles.cache.has(ADMIN_ROLE_ID)) return true;
@@ -47,6 +51,44 @@ function isAdmin(member) {
 
 // ======= MINIGAME ĐOÁN SỐ =======
 let guessGame = null;
+
+// ======= Helper: Mute Helper =======
+async function muteMember(member, durationMs, message) {
+  let mutedRole = member.guild.roles.cache.find(r => r.name.toLowerCase() === "muted");
+  if (!mutedRole) {
+    try {
+      mutedRole = await member.guild.roles.create({ name: "Muted", permissions: [] });
+      // Remove send perms for all channels
+      for (const channel of member.guild.channels.cache.values()) {
+        await channel.permissionOverwrites.create(mutedRole, {
+          SendMessages: false,
+          AddReactions: false,
+          Speak: false
+        });
+      }
+    } catch (e) {
+      return message.reply("Không tạo được role Muted: " + e.message);
+    }
+  }
+  await member.roles.add(mutedRole);
+  message.reply(`${member} đã bị mute${durationMs ? ` trong ${Math.floor(durationMs / 1000)} giây` : ''}.`);
+  if (durationMs) {
+    setTimeout(async () => {
+      if (member.roles.cache.has(mutedRole.id)) {
+        await member.roles.remove(mutedRole).catch(() => {});
+        message.channel.send(`${member} đã được unmute tự động.`);
+      }
+    }, durationMs);
+  }
+}
+
+// ======= Helper: Warn =======
+function addWarn(guildId, userId) {
+  if (!warns[guildId]) warns[guildId] = {};
+  if (!warns[guildId][userId]) warns[guildId][userId] = 0;
+  warns[guildId][userId]++;
+  return warns[guildId][userId];
+}
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
@@ -70,6 +112,21 @@ client.on('messageCreate', async (message) => {
     if (!member) return message.reply('Không tìm thấy user.');
     admins.add(member.id);
     message.reply(`Đã cấp quyền admin cho ${member}.`);
+  }
+
+  // --- REMOVEADMIN ---
+  if (cmd === 'removeadmin') {
+    if (!isOwner(message.member)) return message.reply('Chỉ owner mới xóa quyền admin!');
+    let member;
+    if (args[0]?.startsWith('<@') && args[0].endsWith('>')) {
+      const id = args[0].replace(/[<@!>]/g, '');
+      member = await message.guild.members.fetch(id).catch(() => null);
+    } else if (/^\d+$/.test(args[0])) {
+      member = await message.guild.members.fetch(args[0]).catch(() => null);
+    }
+    if (!member) return message.reply('Không tìm thấy user.');
+    admins.delete(member.id);
+    message.reply(`Đã xóa quyền admin của ${member}.`);
   }
 
   // --- SET ADMIN ROLE ID ---
@@ -156,9 +213,79 @@ client.on('messageCreate', async (message) => {
     if (!isOwner(message.author)) return message.reply('Chỉ owner mới chạy được!');
     message.reply('Lệnh owner đã chạy thành công!');
   }
+
+  // === ADMIN: BAN ===
+  if (cmd === 'ban') {
+    if (!isAdmin(message.member)) return message.reply("Bạn không có quyền admin!");
+    let member;
+    if (args[0]?.startsWith('<@') && args[0].endsWith('>')) {
+      const id = args[0].replace(/[<@!>]/g, '');
+      member = await message.guild.members.fetch(id).catch(() => null);
+    } else if (/^\d+$/.test(args[0])) {
+      member = await message.guild.members.fetch(args[0]).catch(() => null);
+    }
+    if (!member) return message.reply('Không tìm thấy user.');
+    if (isOwner(member.user)) return message.reply('Không thể ban owner!');
+    const reason = args.slice(1).join(" ") || "Không ghi lý do";
+    await member.ban({ reason }).catch(e => message.reply("Không ban được: " + e.message));
+    message.reply(`Đã ban ${member.user.tag}. Lý do: ${reason}`);
+  }
+
+  // === ADMIN: MUTE ===
+  if (cmd === 'mute') {
+    if (!isAdmin(message.member)) return message.reply("Bạn không có quyền admin!");
+    let member;
+    if (args[0]?.startsWith('<@') && args[0].endsWith('>')) {
+      const id = args[0].replace(/[<@!>]/g, '');
+      member = await message.guild.members.fetch(id).catch(() => null);
+    } else if (/^\d+$/.test(args[0])) {
+      member = await message.guild.members.fetch(args[0]).catch(() => null);
+    }
+    if (!member) return message.reply('Không tìm thấy user.');
+    if (isOwner(member.user)) return message.reply('Không thể mute owner!');
+    let duration = 0;
+    if (args[1]) {
+      const timeMatch = args[1].match(/^(\d+)(s|m|h)?$/);
+      if (timeMatch) {
+        const val = parseInt(timeMatch[1]);
+        const unit = timeMatch[2] || "s";
+        duration = unit === "m" ? val * 60 * 1000 : unit === "h" ? val * 60 * 60 * 1000 : val * 1000;
+      }
+    }
+    await muteMember(member, duration, message);
+  }
+
+  // === ADMIN: WARN ===
+  if (cmd === 'warn') {
+    if (!isAdmin(message.member)) return message.reply("Bạn không có quyền admin!");
+    let member;
+    if (args[0]?.startsWith('<@') && args[0].endsWith('>')) {
+      const id = args[0].replace(/[<@!>]/g, '');
+      member = await message.guild.members.fetch(id).catch(() => null);
+    } else if (/^\d+$/.test(args[0])) {
+      member = await message.guild.members.fetch(args[0]).catch(() => null);
+    }
+    if (!member) return message.reply('Không tìm thấy user.');
+    if (isOwner(member.user)) return message.reply('Không thể warn owner!');
+    const reason = args.slice(1).join(" ") || "Không ghi lý do";
+    const count = addWarn(message.guild.id, member.id);
+    message.reply(`${member} đã bị cảnh cáo. Lý do: ${reason}. Số lần warn: ${count}`);
+    // Tự động mute/ban nếu warn quá 3 lần
+    if (count >= 3) {
+      await muteMember(member, 5 * 60 * 1000, message); // Mute 5 phút
+      message.channel.send(`${member} đã bị mute tự động do bị warn quá 3 lần.`);
+    }
+  }
+
+  // === OWNER: SHUTDOWN ===
+  if (cmd === 'shutdown') {
+    if (!isOwner(message.author)) return message.reply("Chỉ owner mới được tắt bot!");
+    message.reply("Đang tắt bot...");
+    setTimeout(() => process.exit(0), 1500);
+  }
+
 });
 
-// ====== Ready ======
 client.once('ready', () => {
   console.log(`Bot đã đăng nhập với tên: ${client.user.tag}`);
 });
