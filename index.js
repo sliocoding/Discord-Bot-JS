@@ -291,3 +291,55 @@ client.once('ready', () => {
 });
 
 client.login(process.env.TOKEN);
+// ... [phần code phía trên giữ nguyên như trước]
+
+client.on('messageCreate', async (message) => {
+  if (message.author.bot || !message.guild) return;
+  if (!message.content.startsWith(PREFIX) && !message.content.startsWith('!help')) return;
+
+  const args = message.content
+    .replace(/^!help/, '?help') // Cho phép !help hoạt động như ?help
+    .slice(PREFIX.length)
+    .trim()
+    .split(/ +/);
+  const cmd = args.shift()?.toLowerCase() || '';
+
+  // === LỆNH HELP CHO MỌI NGƯỜI ===
+  if (cmd === 'help') {
+    return message.channel.send(
+      `**Các lệnh cơ bản:**\n`
+      + `- \`?help\` hoặc \`!help\`: Xem hướng dẫn cơ bản\n`
+      + `- \`?lb\`: Xem bảng xếp hạng minigame\n`
+      + `- \`?guess\`: Chơi đoán số\n`
+      + `- \`?ppt kéo/búa/bao\`: Oẳn tù tì với bot\n`
+      + `- \`?adcmd\`: Lệnh cho admin\n`
+      + `- \`?ownercmd\`: Lệnh cho owner\n`
+      + `- Liên hệ admin nếu cần hỗ trợ thêm.\n`
+      + `_Dùng \`?cmd\` (chỉ owner) để xem toàn bộ lệnh nâng cao!_`
+    );
+  }
+
+  // === LỆNH CMD CHỈ OWNER XEM FULL COMMAND ===
+  if (cmd === 'cmd') {
+    if (!isOwner(message.author)) return message.reply('Chỉ owner mới dùng được lệnh này!');
+    return message.channel.send(
+      `**Danh sách lệnh đầy đủ:**\n`
+      + `- \`?help\` hoặc \`!help\`: Xem hướng dẫn\n`
+      + `- \`?lb\`: Bảng xếp hạng minigame\n`
+      + `- \`?guess\`: Đoán số\n`
+      + `- \`?ppt kéo/búa/bao\`: Oẳn tù tì\n`
+      + `- \`?adcmd\`: Lệnh admin (test)\n`
+      + `- \`?ownercmd\`: Lệnh owner (test)\n`
+      + `- \`?giveadmin @user|ID\`: Owner cấp quyền admin\n`
+      + `- \`?removeadmin @user|ID\`: Owner xóa quyền admin\n`
+      + `- \`?setadminroleid ROLE_ID\`: Owner set role admin\n`
+      + `- \`?ban @user|ID lý do\`: Admin ban user\n`
+      + `- \`?mute @user|ID [thời gian]\`: Admin mute user (10s, 2m, 1h...)\n`
+      + `- \`?warn @user|ID lý do\`: Admin cảnh cáo, 3 warn auto mute 5 phút\n`
+      + `- \`?shutdown\`: Owner tắt bot\n`
+      + `- _Có thể cập nhật thêm các lệnh khác trong tương lai._`
+    );
+  }
+
+  // ... [phần code các lệnh khác giữ nguyên như trước]
+});
