@@ -83,7 +83,7 @@ const HORSE_POOL = [
 // ===== QUIZ QUESTIONS =====
 const QUIZ_QS = [
   {q:'Thủ đô của Pháp là gì?', a:'paris'},
-  {q:'2+2 bằng mấy?', a:'4'},
+  {q:'2+2 bằng mấy?', a:'M bị ngu hay j mà không biết'},
   {q:'Thủ đô Nhật Bản?', a:'tokyo'}
 ];
 
