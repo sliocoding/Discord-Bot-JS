@@ -195,7 +195,7 @@ client.on('messageCreate', async (message) => {
         { name: '👑 Owner', value: '`?owncmd shutdown|say|eval`' },
         { name: '🤖 Khác', value: '`?ping`, `?ask`, `?help`' }
       )
-      .setFooter({ text: 'Skibidi Bot 💀 by You' });
+      .setFooter({ text: 'Skibidi Bot by shimano20' });
     message.channel.send({ embeds: [embed] });
   }
 });
