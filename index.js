@@ -27,7 +27,7 @@ let openai = null;
 if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 } else {
-  console.warn('⚠️ OPENAI_API_KEY không được cung cấp. Lệnh ?ask sẽ không hoạt động.');
+  console.warn('⚠️ Có OpenAI API Key đâu mà bắt t trả lời?');
 }
 
 // === COOLDOWN & RATE LIMITING ===
@@ -126,11 +126,11 @@ client.on('interactionCreate', async (interaction) => {
 
   try {
     if (commandName === 'ping') {
-      await interaction.reply(`🏓 Ping: ${client.ws.ping}ms`);
+      await interaction.reply(`🏓 Pong: ${client.ws.ping}ms`);
     }
 
     if (commandName === 'bal') {
-      await interaction.reply(`💰 Bạn có **${data.balances[user.id] || 0} Skibidi Coin**`);
+      await interaction.reply(`💰 Ông con giời có **${data.balances[user.id] || 0} Skibidi Coin**`);
     }
 
     if (commandName === 'hourly') {
@@ -139,13 +139,13 @@ client.on('interactionCreate', async (interaction) => {
 
       if (remaining) {
         const timeLeft = Math.floor((remaining - Date.now()) / 1000);
-        return interaction.reply(`⏰ Bạn phải đợi **${formatTime(timeLeft)}** nữa!`);
+        return interaction.reply(`⏰ Ông con giời phải đợi thêm **${formatTime(timeLeft)}** nữa thì mới có coin!`);
       }
 
       data.balances[user.id] = (data.balances[user.id] || 0) + 50;
       cooldowns.set(cooldownKey, true);
       await saveData();
-      await interaction.reply('💸 Nhận **50 Skibidi Coin!**');
+      await interaction.reply('💸 Lụm **50 Skibidi Coin!**');
     }
 
     if (commandName === 'ask') {
@@ -156,8 +156,8 @@ client.on('interactionCreate', async (interaction) => {
       const rateLimitKey = `ask_${user.id}`;
       const apiCount = apiRateLimit.get(rateLimitKey) || 0;
 
-      if (apiCount >= 3) {
-        return interaction.reply('⏰ Bạn đã hỏi quá nhiều! Đợi 1 phút.');
+      if (apiCount >= 1000) {
+        return interaction.reply('⏰ Cho t thở miếng được kh? Đợi 1 phút.');
       }
 
       const prompt = interaction.options.getString('question');
@@ -188,12 +188,12 @@ client.on('interactionCreate', async (interaction) => {
           { name: '👑 Owner', value: '`?owncmd shutdown|say|eval`' },
           { name: '🤖 Khác', value: '`?ping`, `?ask`, `?help` hoặc `/ping`, `/ask`, `/help`' }
         )
-        .setFooter({ text: 'Skibidi Bot - Nâng cấp bởi Replit Agent' });
+        .setFooter({ text: 'Skibidi Bot by shimano20' });
       await interaction.reply({ embeds: [embed] });
     }
   } catch (error) {
     console.error(`❌ Lỗi xử lý slash command ${commandName}:`, error.message);
-    const errorMsg = `❌ Đã xảy ra lỗi khi xử lý lệnh: ${error.message}`;
+    const errorMsg = `❌ Chạy đi các cháu ơi lỗi rồi: ${error.message}`;
     if (interaction.deferred) {
       await interaction.editReply(errorMsg);
     } else {
@@ -211,11 +211,11 @@ client.on('messageCreate', async (message) => {
   try {
     // === BASIC ===
     if (cmd === 'ping') {
-      return message.reply(`🏓 Ping: ${client.ws.ping}ms`);
+      return message.reply(`🏓 Pong: ${client.ws.ping}ms`);
     }
 
     if (cmd === 'bal') {
-      return message.reply(`💰 Bạn có **${data.balances[message.author.id] || 0} Skibidi Coin**`);
+      return message.reply(`💰 Ông con giời có **${data.balances[message.author.id] || 0} Skibidi Coin**`);
     }
 
     if (cmd === 'hourly') {
@@ -224,19 +224,19 @@ client.on('messageCreate', async (message) => {
 
       if (remaining) {
         const timeLeft = Math.floor((remaining - Date.now()) / 1000);
-        return message.reply(`⏰ Bạn phải đợi **${formatTime(timeLeft)}** nữa!`);
+        return message.reply(`⏰ Ông con giời phải đợi **${formatTime(timeLeft)}** nữa thì mới có coin!`);
       }
 
       data.balances[message.author.id] = (data.balances[message.author.id] || 0) + 50;
       cooldowns.set(cooldownKey, true);
       await saveData();
-      return message.reply('💸 Nhận **50 Skibidi Coin!**');
+      return message.reply('💸 Lụm **50 Skibidi Coin!**');
     }
 
     // === GAME ===
     if (cmd === 'guess') {
       const num = Math.floor(Math.random() * 100) + 1;
-      await message.reply('🎯 Tôi đã nghĩ 1 số (1-100). Đoán đi!');
+      await message.reply('🎯 T đã nghĩ ra 1 số (1-100). Đoán đi các ông con giời!');
       const collector = message.channel.createMessageCollector({ time: 30000 });
       
       collector.on('collect', (m) => {
@@ -249,13 +249,13 @@ client.on('messageCreate', async (message) => {
           saveData();
           collector.stop();
         } else if (guess < num) {
-          m.reply('🔼 Lớn hơn!');
+          m.reply('🔼 Lớn hơn miếng nữa!');
         } else {
-          m.reply('🔽 Nhỏ hơn!');
+          m.reply('🔽 Nhỏ hơn miếng nữa!');
         }
       });
       
-      collector.on('end', () => message.channel.send(`⏱ Hết giờ! Số đúng: ${num}`));
+      collector.on('end', () => message.channel.send(`⏱ Hết giờ rồi các ông con giời,Số đúng là: ${num}`));
     }
 
     if (cmd === 'cf') {
@@ -264,19 +264,19 @@ client.on('messageCreate', async (message) => {
 
       // Data validation
       if (!['heads', 'tails'].includes(side)) {
-        return message.reply('❌ Cú pháp: `?cf heads|tails <số>`');
+        return message.reply('❌ Dạ lệnh là: `?cf heads|tails <số>`');
       }
 
       if (isNaN(bet) || bet <= 0) {
-        return message.reply('❌ Số tiền đặt cược phải là số dương!');
+        return message.reply('❌ M người âm hay gì mà chơi coin âm?');
       }
 
       if (bet > 1000000) {
-        return message.reply('❌ Số tiền đặt cược tối đa là 1,000,000!');
+        return message.reply('❌ Adu giàu v ba,nhưng mà đặt cược tối đa là 1,000,000 thôi ông con giời ạ!');
       }
 
       if ((data.balances[message.author.id] || 0) < bet) {
-        return message.reply('❌ Không đủ coin!');
+        return message.reply('❌ Hết coin mà bày đặt!');
       }
 
       const flip = Math.random() < 0.5 ? 'heads' : 'tails';
@@ -306,7 +306,7 @@ client.on('messageCreate', async (message) => {
           if (pos[i] >= 10 && !finished) {
             finished = true;
             clearInterval(interval);
-            message.channel.send(`🏆 ${h} thắng cuộc!`);
+            message.channel.send(`🏆 ${h} win cmnr!`);
           }
           return `${h} ${'—'.repeat(pos[i])}>`;
         }).join('\n');
@@ -324,11 +324,11 @@ client.on('messageCreate', async (message) => {
 
       // Data validation
       if (!/^[A-Z]{1,5}$/.test(symbol)) {
-        return message.reply('❌ Mã cổ phiếu không hợp lệ (1-5 chữ cái)!');
+        return message.reply('❌ Mã cổ phiếu gì mà xàm quá vậy ba,nhớ là use (1-5 chữ cái)!');
       }
 
       if (!data.stocks[symbol]) {
-        return message.reply('❌ Mã không tồn tại! Dùng `?stock` để xem danh sách.');
+        return message.reply('❌ Ủa có lệnh đó lun hả hay do t ngu ta? Dùng `?stock` để xem danh sách.');
       }
 
       const change = Math.floor(Math.random() * 21) - 10;
@@ -340,14 +340,14 @@ client.on('messageCreate', async (message) => {
     // === ADMIN ===
     if (cmd === 'adcmd') {
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-        return message.reply('🚫 Không có quyền!');
+        return message.reply('🚫 M có bị ngáo quyền lực không,m tưởng m là ai mà tao phải nghe lời m hả dog?');
       }
 
       const sub = args.shift();
       const user = message.mentions.members.first();
 
       if (!user) {
-        return message.reply('❌ Vui lòng mention user!');
+        return message.reply('❌ Dạ anh/chị hai pls mention user dùm em cái!');
       }
 
       try {
@@ -377,7 +377,7 @@ client.on('messageCreate', async (message) => {
           return message.reply(`💵 Sửa coin cho ${user.user.tag} → ${amount}`);
         }
 
-        return message.reply('❌ Lệnh con không hợp lệ! Dùng: ban|mute|warn|editbal');
+        return message.reply('❌ Dạ ông/bà nội,cái lệnh ?help để cho chó ăn à,mình là admin thì thông minh dùm cái');
       } catch (error) {
         return message.reply(`❌ Lỗi: ${error.message}`);
       }
@@ -386,7 +386,7 @@ client.on('messageCreate', async (message) => {
     // === OWNER ===
     if (cmd === 'owncmd') {
       if (message.author.id !== OWNER_ID) {
-        return message.reply('🚫 Chỉ owner!');
+        return message.reply('🚫 Ê ní,ní là cái thá gì mà bắt t phải nghe lệnh ní,bớt ảo tưởng mình là owner dùm cái');
       }
 
       const sub = args.shift();
@@ -447,7 +447,7 @@ client.on('messageCreate', async (message) => {
       const rateLimitKey = `ask_${message.author.id}`;
       const apiCount = apiRateLimit.get(rateLimitKey) || 0;
 
-      if (apiCount >= 3) {
+      if (apiCount >= 1000) {
         return message.reply('⏰ Bạn đã hỏi quá nhiều! Đợi 1 phút.');
       }
 
