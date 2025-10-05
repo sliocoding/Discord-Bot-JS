@@ -1,0 +1,9 @@
+{
+  "balances": {},
+  "warns": {},
+  "stocks": {
+    "AAPL": 100,
+    "TSLA": 120,
+    "GME": 80
+  }
+}
