@@ -448,7 +448,7 @@ client.on('messageCreate', async (message) => {
       const apiCount = apiRateLimit.get(rateLimitKey) || 0;
 
       if (apiCount >= 1000) {
-        return message.reply('⏰ Bạn đã hỏi quá nhiều! Đợi 1 phút.');
+        return message.reply('⏰ Cho t thở miếng được không? Đợi 1 phút.');
       }
 
       const prompt = args.join(' ');
@@ -487,7 +487,7 @@ client.on('messageCreate', async (message) => {
     }
   } catch (error) {
     console.error(`❌ Lỗi xử lý lệnh ${cmd}:`, error.message);
-    message.reply(`❌ Đã xảy ra lỗi: ${error.message}`);
+    message.reply(`❌ Chạy đi các cháu ơi lỗi rồi: ${error.message}`);
   }
 });
 
