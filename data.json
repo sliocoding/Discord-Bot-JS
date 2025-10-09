@@ -1,9 +1,9 @@
 {
-  "balances": {},
+  "balances": {1000000000000000000},
   "warns": {},
   "stocks": {
-    "AAPL": 100,
-    "TSLA": 120,
-    "GME": 80
+    "AAPL": 36,
+    "TSLA": 67,
+    "GME": 8386
   }
 }
